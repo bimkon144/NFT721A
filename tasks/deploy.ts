@@ -1,11 +1,11 @@
 import { ethers } from "hardhat";
 
 async function main() {
-    const MultiSenderV1 = await ethers.getContractFactory("MultiSenderV1");
-    console.log("Deploying MultiSenderV1...");
-    const multiSenderV1 = await MultiSenderV1.deploy();
-    await multiSenderV1.deployed();
-    console.log("MultiSenderV1 deployed to:", multiSenderV1.address);
+    const BimkonEyes = await ethers.getContractFactory("BimkonEyes");
+    console.log("Deploying BimkonEyes...");
+    const bimkonEyes = await BimkonEyes.deploy();
+    await bimkonEyes.deployed();
+    console.log("BimkonEyes deployed to:",  bimkonEyes.address);
 }
 
 main()

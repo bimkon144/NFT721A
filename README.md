@@ -1,19 +1,19 @@
-# CryotoFlow
+# BimkonEyes MFT-721A
 
 ## Description
 
-This app let you to send native token, ERC-20, NFTs - ERC-721, ERC-1155 to many addresses in one transaction
+this is implementation of NFT-721A
 
 ## Demo 
-https://bimkon144.github.io/CryptoFlowV1/
+
 
 ## Contribution
 
 ### Installation and run
 
-- git clone https://github.com/bimkon144/CryptoFlowV1.git
+- git clone 
 
-- cd CryptoFlowV1
+- cd BimkonEyes
 - ```npm i```
 - create morallis bsct testnet server
 - create .env based on .env.example and your wallet key, mnemonic , moralis URL, etherscan key, 
