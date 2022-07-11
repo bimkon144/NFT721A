@@ -1,18 +1,21 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.10;
+pragma solidity 0.8.13;
 
-import "erc721a/contracts/ERC721A.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import "hardhat/console.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "erc721a/contracts/ERC721A.sol";
 
-contract BimkonEyes is ERC721A, Ownable {
+contract BimkonEyes is ERC721A, Ownable, AccessControl {
   uint256 public constant MAX_SUPPLY = 2000;
   uint256 public constant MAX_PUBLIC_MINT = 10;
   uint256 public constant MAX_WHITELIST_MINT = 3;
   uint256 public constant MAX_AIRDROP_MINT = 2;
   uint256 public publicSalePrice = 1 ether;
   uint256 public whiteListSalePrice = 0.5 ether;
+  bytes32 public constant PRICE_MANAGER_ROLE = keccak256("PRICE_MANAGER_ROLE");
+  bytes32 public constant SELL_PHASE_MANAGER_ROLE = keccak256("SELL_PHASE_MANAGER_ROLE");
+  bytes32 public constant WHITE_LIST_MANAGER_ROLE = keccak256("WHITE_LIST_MANAGER_ROLE");
 
   string private _baseTokenUri;
   string public placeholderTokenUri;
@@ -34,7 +37,11 @@ contract BimkonEyes is ERC721A, Ownable {
 
   event SentNFT(address _token, address _sender, uint256[] _tokenIds);
 
-  constructor() ERC721A("BimkonEyes", "BYS") {}
+  constructor(address priceManager, address sellManager, address whiteListManager) ERC721A("BimkonEyes", "BYS") {
+    _setupRole(PRICE_MANAGER_ROLE, priceManager);
+    _setupRole(SELL_PHASE_MANAGER_ROLE, sellManager);
+    _setupRole(WHITE_LIST_MANAGER_ROLE, whiteListManager);
+  }
 
   modifier isBeyondMaxSupply(uint256 _quantity) {
     require(
@@ -42,6 +49,41 @@ contract BimkonEyes is ERC721A, Ownable {
       "BimkonEyes :: Beyond Max Supply"
     );
     _;
+  }
+  modifier onlyPriceManager() {
+    require(
+     hasRole(PRICE_MANAGER_ROLE, msg.sender),
+      "BimkonEyes :: Caller is not price manager"
+    );
+    _;
+  }
+
+  modifier onlySellPhaseManager() {
+    require(
+     hasRole(SELL_PHASE_MANAGER_ROLE, msg.sender),
+      "BimkonEyes :: Caller is not phase sell manager"
+    );
+    _;
+  }
+
+  modifier onlyWhiteListManager() {
+    require(
+     hasRole(WHITE_LIST_MANAGER_ROLE, msg.sender),
+      "BimkonEyes :: Caller is not whitelist manager"
+    );
+    _;
+  }
+
+  function supportsInterface(bytes4 interfaceId)
+    public
+    view
+    virtual
+    override(ERC721A, AccessControl)
+    returns (bool)
+  {
+    return
+      ERC721A.supportsInterface(interfaceId) ||
+      AccessControl.supportsInterface(interfaceId);
   }
 
   function mint(uint256 _quantity)
@@ -59,7 +101,6 @@ contract BimkonEyes is ERC721A, Ownable {
       msg.value >= (publicSalePrice * _quantity),
       "BimkonEyes :: low sent ether"
     );
-    //todo use aux for track limits
     totalPublicMint[msg.sender] += _quantity;
     _safeMint(msg.sender, _quantity);
   }
@@ -79,13 +120,13 @@ contract BimkonEyes is ERC721A, Ownable {
       msg.value >= (whiteListSalePrice * _quantity),
       "BimkonEyes :: Payment is below the price"
     );
-    //create leaf node
+
     bytes32 sender = keccak256(abi.encodePacked(msg.sender));
     require(
       MerkleProof.verify(_merkleProof, _merkleRootWhiteList, sender),
       "BimkonEyes :: You are not whitelisted"
     );
-    //todo use aux for track limits
+
     totalWhitelistMint[msg.sender] += _quantity;
     _safeMint(msg.sender, _quantity);
   }
@@ -99,13 +140,13 @@ contract BimkonEyes is ERC721A, Ownable {
       (totalAirdropMint[msg.sender] + _quantity) <= MAX_AIRDROP_MINT,
       "BimkonEyes :: Cannot mint beyond airdrop max mint!"
     );
-    //create leaf node
+
     bytes32 sender = keccak256(abi.encodePacked(msg.sender));
     require(
       MerkleProof.verify(_merkleProof, _merkleRootAirDrop, sender),
       "BimkonEyes :: You are not allowed to claim DROP"
     );
-    //todo use aux for track limits
+
     totalAirdropMint[msg.sender] += _quantity;
     _safeMint(msg.sender, _quantity);
   }
@@ -182,11 +223,11 @@ contract BimkonEyes is ERC721A, Ownable {
         : "";
   }
 
-  function setPublicSalePrice(uint256 _price) external onlyOwner {
+  function setPublicSalePrice(uint256 _price) external onlyPriceManager {
     publicSalePrice = _price;
   }
 
-  function setWhiteListSalePrice(uint256 _price) external onlyOwner {
+  function setWhiteListSalePrice(uint256 _price) external onlyPriceManager {
     whiteListSalePrice = _price;
   }
 
@@ -201,11 +242,11 @@ contract BimkonEyes is ERC721A, Ownable {
     placeholderTokenUri = _placeholderTokenUri;
   }
 
-  function setMerkleRootWhiteList(bytes32 merkleRoot_) external onlyOwner {
+  function setMerkleRootWhiteList(bytes32 merkleRoot_) external onlyWhiteListManager {
     _merkleRootWhiteList = merkleRoot_;
   }
 
-  function setMerkleRootAirDrop(bytes32 merkleRoot_) external onlyOwner {
+  function setMerkleRootAirDrop(bytes32 merkleRoot_) external onlyWhiteListManager {
     _merkleRootAirDrop = merkleRoot_;
   }
 
@@ -217,19 +258,19 @@ contract BimkonEyes is ERC721A, Ownable {
     return _merkleRootAirDrop;
   }
 
-  function toggleWhiteListSale() external onlyOwner {
+  function toggleWhiteListSale() external onlySellPhaseManager {
     whiteListSale = !whiteListSale;
   }
 
-  function toggleAirDrop() external onlyOwner {
+  function toggleAirDrop() external onlySellPhaseManager {
     airDrop = !airDrop;
   }
 
-  function togglePublicSale() external onlyOwner {
+  function togglePublicSale() external onlySellPhaseManager {
     publicSale = !publicSale;
   }
 
-  function toggleReveal() external onlyOwner {
+  function toggleReveal() external onlySellPhaseManager {
     isRevealed = !isRevealed;
   }
 

@@ -13,7 +13,16 @@ import 'solidity-coverage';
 dotenv.config();
 
 const config: HardhatUserConfig = {
-  solidity: '0.8.10',
+  solidity: {
+    compilers: [
+      {
+        version: '0.8.10',
+      },
+      {
+        version: '0.8.13',
+      }
+    ]
+  },
   paths: {
     artifacts: './frontend/src/artifacts'
   },
@@ -29,19 +38,19 @@ const config: HardhatUserConfig = {
       accounts: process.env.WALLET_KEY !== undefined
         ? [process.env.WALLET_KEY]
         : []
-        //moralis api for deploy/verify on testnet
+      //moralis api for deploy/verify on testnet
     },
     bscMainnet: {
       url: process.env.MORALIS_MAIN_URL,
       accounts: { mnemonic: process.env.MNEMONIC }
+    },
+    goerli: {
+      url: process.env.GOERLI_RPC_URL || '',
+      accounts:
+        process.env.WALLET_KEY !== undefined
+          ? [process.env.WALLET_KEY]
+          : []
     }
-    // ropsten: {
-    //   url: process.env.ROPSTEN_URL || '',
-    //   accounts:
-    //     process.env.TEST_ETH_ACCOUNT_PRIVATE_KEY !== undefined
-    //       ? [process.env.TEST_ETH_ACCOUNT_PRIVATE_KEY]
-    //       : []
-    // }
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,

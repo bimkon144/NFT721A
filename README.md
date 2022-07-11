@@ -23,3 +23,5 @@ cd NFT721A scripts:
 
 * Run localhost tests  - ```npx hardhat test```
 * Run hardhat clean  - ```npx hardhat clean```
+* deploy to goerli testnet - ```npx hardhat run tasks/deploy.ts --network goerli```
+* deployed to 0x48347923efe89021d162B60dF9D7aFEBa1aaFdE6
