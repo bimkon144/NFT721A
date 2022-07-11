@@ -102,8 +102,6 @@ contract BimkonEyes is ERC721A, Ownable {
 
   function claimAirdrop(bytes32[] memory _merkleProof, uint256 _quantity)
     external
-    payable
-    callerIsUser
     isBeyondMaxSupply(_quantity)
   {
     require(airDrop, "BimkonEyes :: airDrop is on Pause");
