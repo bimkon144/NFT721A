@@ -36,14 +36,6 @@ contract BimkonEyes is ERC721A, Ownable {
 
   constructor() ERC721A("BimkonEyes", "BYS") {}
 
-  modifier callerIsUser() {
-    require(
-      tx.origin == msg.sender,
-      "BimkonEyes :: Cannot be called by a contract"
-    );
-    _;
-  }
-
   modifier isBeyondMaxSupply(uint256 _quantity) {
     require(
       (totalSupply() + _quantity) <= MAX_SUPPLY,
@@ -55,7 +47,6 @@ contract BimkonEyes is ERC721A, Ownable {
   function mint(uint256 _quantity)
     external
     payable
-    callerIsUser
     isBeyondMaxSupply(_quantity)
   {
     require(publicSale, "BimkonEyes :: Not Yet Active.");
@@ -76,7 +67,6 @@ contract BimkonEyes is ERC721A, Ownable {
   function whitelistMint(bytes32[] memory _merkleProof, uint256 _quantity)
     external
     payable
-    callerIsUser
     isBeyondMaxSupply(_quantity)
   {
     require(whiteListSale, "BimkonEyes :: Minting is on Pause");
