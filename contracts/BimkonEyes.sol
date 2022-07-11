@@ -23,7 +23,7 @@ contract BimkonEyes is ERC721A, Ownable {
   bool public publicSale;
   bool public whiteListSale;
   bool public airDrop;
-  // bool public teamMinted;
+  bool public teamMinted;
 
   bytes32 private _merkleRootWhiteList;
   bytes32 private _merkleRootAirDrop;
@@ -148,10 +148,10 @@ contract BimkonEyes is ERC721A, Ownable {
     return MAX_PUBLIC_MINT - totalPublicMint[msg.sender];
   }
 
-  function teamMint(uint256 _quantity) external onlyOwner {
-    // require(!teamMinted, "BimkonEyes :: Team already minted");
-    // teamMinted = true;
-    _safeMint(msg.sender, _quantity);
+  function teamMint() external onlyOwner {
+    require(!teamMinted, "BimkonEyes :: Team already minted");
+    teamMinted = true;
+    _safeMint(msg.sender, 200);
   }
 
   function _baseURI() internal view override returns (string memory) {
