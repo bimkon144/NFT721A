@@ -6,6 +6,8 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "erc721a/contracts/ERC721A.sol";
 
+/// @title  NFT Contract with Access Management Control
+
 contract BimkonEyes is ERC721A, Ownable, AccessControl {
   uint256 public constant MAX_SUPPLY = 2000;
   uint256 public constant MAX_PUBLIC_MINT = 10;
@@ -74,6 +76,9 @@ contract BimkonEyes is ERC721A, Ownable, AccessControl {
     _;
   }
 
+  ///@notice it show supported interfaces
+  ///@param interfaceId interface id
+  ///@dev external contracts can check if some interface is supported
   function supportsInterface(bytes4 interfaceId)
     public
     view
@@ -86,6 +91,9 @@ contract BimkonEyes is ERC721A, Ownable, AccessControl {
       AccessControl.supportsInterface(interfaceId);
   }
 
+  ///@notice it show supported interfaces
+  ///@param _quantity NFT quantity to mint
+  ///@dev can mint only when publicSale true
   function mint(uint256 _quantity)
     external
     payable
@@ -105,6 +113,10 @@ contract BimkonEyes is ERC721A, Ownable, AccessControl {
     _safeMint(msg.sender, _quantity);
   }
 
+  ///@notice mint token to whitelisted addresses
+  ///@param _merkleProof proof that user in whiteList
+  ///@param _quantity quantity to mint
+  ///@dev only whitelisted can do it
   function whitelistMint(bytes32[] memory _merkleProof, uint256 _quantity)
     external
     payable
@@ -131,6 +143,10 @@ contract BimkonEyes is ERC721A, Ownable, AccessControl {
     _safeMint(msg.sender, _quantity);
   }
 
+  ///@notice claim air drop
+  ///@param _merkleProof proof that user in whiteList
+  ///@param _quantity quantity to mint
+  ///@dev only whitelisted can do it
   function claimAirdrop(bytes32[] memory _merkleProof, uint256 _quantity)
     external
     isBeyondMaxSupply(_quantity)
@@ -151,6 +167,10 @@ contract BimkonEyes is ERC721A, Ownable, AccessControl {
     _safeMint(msg.sender, _quantity);
   }
 
+  ///@notice check if user can claim airdrop
+  ///@param _merkleProof proof that user in whiteList for airdrop
+  ///@dev using merkleProof to verify user
+  ///@return bool that indicated if user can claim Airdrop
   function canClaimAirDrop(bytes32[] memory _merkleProof)
     external
     view
@@ -164,6 +184,10 @@ contract BimkonEyes is ERC721A, Ownable, AccessControl {
       );
   }
 
+  ///@notice check if user in whitelist
+  ///@param _merkleProof proof that user in whiteLis for whitelistSale
+  ///@dev using merkleProof to verify user
+  ///@return bool that indicated if user can claim Airdrop
   function isWhiteListed(bytes32[] memory _merkleProof)
     external
     view
@@ -177,18 +201,26 @@ contract BimkonEyes is ERC721A, Ownable, AccessControl {
       );
   }
 
+  ///@notice check mint amount for airdrop left
+  ///@return uint256 amount for airdrop left
   function allowedToClaimDropAmount() external view returns (uint256) {
     return MAX_AIRDROP_MINT - totalAirdropMint[msg.sender];
   }
 
+  ///@notice check mint amount for whiteList left
+  ///@return uint256 amount for whiteList left
   function allowedToWhiteListMintAmount() external view returns (uint256) {
     return MAX_WHITELIST_MINT - totalWhitelistMint[msg.sender];
   }
 
+  ///@notice check mint amount for publicSale left
+  ///@return uint256 amount for publicSake left
   function allowedToPublicMintAmount() external view returns (uint256) {
     return MAX_PUBLIC_MINT - totalPublicMint[msg.sender];
   }
 
+  ///@notice team mint nft for themselfs
+  ///@dev can only mint once
   function teamMint() external onlyOwner {
     require(!teamMinted, "BimkonEyes :: Team already minted");
     teamMinted = true;
@@ -199,19 +231,23 @@ contract BimkonEyes is ERC721A, Ownable, AccessControl {
     return _baseTokenUri;
   }
 
-  //return uri for certain token
-  function tokenURI(uint256 tokenId)
+  
+  ///@notice return token URI
+  ///@param _tokenId tokenId
+  ///@dev if not revealed - return placeholder token URI
+  ///@return string token URI
+  function tokenURI(uint256 _tokenId)
     public
     view
     override
     returns (string memory)
   {
     require(
-      _exists(tokenId),
+      _exists(_tokenId),
       "ERC721Metadata: URI query for nonexistent token"
     );
 
-    uint256 trueId = tokenId + 1;
+    uint256 trueId = _tokenId + 1;
 
     if (!isRevealed) {
       return placeholderTokenUri;
@@ -223,18 +259,30 @@ contract BimkonEyes is ERC721A, Ownable, AccessControl {
         : "";
   }
 
+  ///@notice set publicSalePrice
+  ///@param _price price for sale
+  ///@dev only priceManager can call this
   function setPublicSalePrice(uint256 _price) external onlyPriceManager {
     publicSalePrice = _price;
   }
 
+  ///@notice set whiteListSalePrice
+  ///@param _price price for sale
+  ///@dev only priceManager can call this
   function setWhiteListSalePrice(uint256 _price) external onlyPriceManager {
     whiteListSalePrice = _price;
   }
 
+  ///@notice set base token URI
+  ///@param baseTokenUri_ base token URI
+  ///@dev only owner can do this
   function setTokenUri(string memory baseTokenUri_) external onlyOwner {
     _baseTokenUri = baseTokenUri_;
   }
 
+  ///@notice set placeholder token URI
+  ///@param _placeholderTokenUri placeholder token URI
+  ///@dev only owner can do this
   function setPlaceHolderUri(string memory _placeholderTokenUri)
     external
     onlyOwner
@@ -242,38 +290,58 @@ contract BimkonEyes is ERC721A, Ownable, AccessControl {
     placeholderTokenUri = _placeholderTokenUri;
   }
 
+  ///@notice set merkle root for whitelist
+  ///@param merkleRoot_ merkle root 
+  ///@dev only whiteList manager can do this
   function setMerkleRootWhiteList(bytes32 merkleRoot_) external onlyWhiteListManager {
     _merkleRootWhiteList = merkleRoot_;
   }
-
+   
+  ///@notice set merkle root for whitelist
+  ///@param merkleRoot_ merkle root 
+  ///@dev only whiteList manager can do this
   function setMerkleRootAirDrop(bytes32 merkleRoot_) external onlyWhiteListManager {
     _merkleRootAirDrop = merkleRoot_;
   }
 
+  ///@notice get merkle root for whitelist
   function getMerkleRootWhiteList() external view returns (bytes32) {
     return _merkleRootWhiteList;
   }
 
+  ///@notice get merkle root for airdrop
   function getMerkleRootAirDrop() external view returns (bytes32) {
     return _merkleRootAirDrop;
   }
 
+  ///@notice toggle whiteListSale
+  ///@dev only sellPhaseManager can do it
   function toggleWhiteListSale() external onlySellPhaseManager {
     whiteListSale = !whiteListSale;
   }
 
+  ///@notice toggle AirDrop phase
+  ///@dev only sellPhaseManager can do it
   function toggleAirDrop() external onlySellPhaseManager {
     airDrop = !airDrop;
   }
 
+  ///@notice toggle PublicSale phase
+  ///@dev only sellPhaseManager can do it
   function togglePublicSale() external onlySellPhaseManager {
     publicSale = !publicSale;
   }
 
+  ///@notice toggle reveal
+  ///@dev only sellPhaseManager can do it
   function toggleReveal() external onlySellPhaseManager {
     isRevealed = !isRevealed;
   }
 
+  ///@notice this let multiSend 721 tokens
+  ///@param _token token address
+  ///@param _to to array 
+  ///@param _id token id array
   function multiSendERC721(
     IERC721A _token,
     address[] calldata _to,
@@ -292,6 +360,10 @@ contract BimkonEyes is ERC721A, Ownable, AccessControl {
     emit SentNFT(address(_token), msg.sender, _transferredTokenIds);
   }
 
+  ///@notice it withdraw assets from contract
+  ///@param _to withdraw to
+  ///@param _value value to withdraw
+  ///@dev only owner can do this
   function withdraw(address _to, uint256 _value) external onlyOwner {
     (bool success, ) = _to.call{value: _value}("");
     require(success, "Failed to send native assets");
