@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { ethers, network, upgrades, waffle } from 'hardhat';
+import { arrayify, id } from 'ethers/lib/utils'
 import keccak256 from 'keccak256'
 import { randomBytes } from 'crypto'
 import { utils, Wallet } from 'ethers'
@@ -12,12 +13,17 @@ describe("MultiSender", (): void => {
     let bimkonEyes: BimkonEyes;
     let root: any;
     let merkleTree: any;
+    let signatureChecker: any;
+    let minterSignature: any;
 
 
     beforeEach(async () => {
         [owner, user0, team, priceManager, sellPhaseManager, whiteListManager, user5, user6, user7, user8, user9] = await ethers.getSigners();
+        const SignatureChecker = await ethers.getContractFactory("SignatureChecker");
+        signatureChecker = await SignatureChecker.deploy();
+        await signatureChecker.deployed();
         const BimkonEyes = await ethers.getContractFactory("BimkonEyes");
-        bimkonEyes = await BimkonEyes.deploy(priceManager.address, sellPhaseManager.address, whiteListManager.address);
+        bimkonEyes = await BimkonEyes.deploy(priceManager.address, sellPhaseManager.address, whiteListManager.address, signatureChecker.address);
         await bimkonEyes.deployed();
         const randomAddresses = new Array(15)
             .fill(0)
@@ -29,57 +35,73 @@ describe("MultiSender", (): void => {
         )
         root = merkleTree.getHexRoot()
         await bimkonEyes.connect(whiteListManager).setMerkleRootWhiteList(root);
+
+
     });
 
-    it("contract deployed", async () => {
-        expect(await bimkonEyes.deployed()).to.equal(bimkonEyes);
-        expect(await bimkonEyes.name()).to.equal("BimkonEyes");
-        expect(await bimkonEyes.symbol()).to.equal("BYS");
-        expect(await bimkonEyes.MAX_SUPPLY()).to.equal(2000);
-        expect(await bimkonEyes.MAX_PUBLIC_MINT()).to.equal(10);
-        expect(await bimkonEyes.MAX_WHITELIST_MINT()).to.equal(3);
-        expect(await bimkonEyes.publicSalePrice()).to.equal(ethers.utils.parseEther('1'));
-        expect(await bimkonEyes.whiteListSalePrice()).to.equal(ethers.utils.parseEther('0.5'));
-        expect(await bimkonEyes.isRevealed()).to.equal(false);
-        expect(await bimkonEyes.publicSale()).to.equal(false);
-        expect(await bimkonEyes.whiteListSale()).to.equal(false);
-        expect(await bimkonEyes.totalSupply()).to.equal(0);
+    // it("contract deployed", async () => {
+    //     expect(await bimkonEyes.deployed()).to.equal(bimkonEyes);
+    //     expect(await bimkonEyes.name()).to.equal("BimkonEyes");
+    //     expect(await bimkonEyes.symbol()).to.equal("BYS");
+    //     expect(await bimkonEyes.MAX_SUPPLY()).to.equal(2000);
+    //     expect(await bimkonEyes.MAX_PUBLIC_MINT()).to.equal(10);
+    //     expect(await bimkonEyes.MAX_WHITELIST_MINT()).to.equal(3);
+    //     expect(await bimkonEyes.publicSalePrice()).to.equal(ethers.utils.parseEther('1'));
+    //     expect(await bimkonEyes.whiteListSalePrice()).to.equal(ethers.utils.parseEther('0.5'));
+    //     expect(await bimkonEyes.isRevealed()).to.equal(false);
+    //     expect(await bimkonEyes.publicSale()).to.equal(false);
+    //     expect(await bimkonEyes.whiteListSale()).to.equal(false);
+    //     expect(await bimkonEyes.totalSupply()).to.equal(0);
+    // });
+
+    it("should not let mint coz invalid signature", async () => {
+        const catHash = await signatureChecker.CAT();
+        expect(catHash).to.eq(id('Cat'));
+        minterSignature = await owner.signMessage(arrayify(catHash))
+        await bimkonEyes.connect(sellPhaseManager).togglePublicSale();
+        await expect(bimkonEyes.mint(11, minterSignature)).to.not.be.revertedWith("BimkonEyes :: Invalid Signature.");
+
+        const friendSignature = await user0.signMessage(arrayify(catHash))
+        await expect(bimkonEyes.mint(1, friendSignature, { value: ethers.utils.parseEther('5') })).to.be.revertedWith("BimkonEyes :: Invalid Signature.");
     });
 
     it("should not let mint coz publicSale=false", async () => {
-        await expect(bimkonEyes.mint(1)).to.be.revertedWith('BimkonEyes :: Not Yet Active.');
+        await expect(bimkonEyes.mint(1, minterSignature)).to.be.revertedWith('BimkonEyes :: Not Yet Active.');
     });
 
     it("should not let mint coz Beyond Max Supply", async () => {
         await bimkonEyes.connect(sellPhaseManager).togglePublicSale();
         expect(await bimkonEyes.publicSale()).to.equal(true);
-        await expect(bimkonEyes.mint(2001)).to.be.revertedWith('BimkonEyes :: Beyond Max Supply');
+        await expect(bimkonEyes.connect(team).mint(2001, minterSignature)).to.be.revertedWith('BimkonEyes :: Beyond Max Supply');
     });
 
     it("should not let mint coz Beyond Max public mint", async () => {
         await bimkonEyes.connect(sellPhaseManager).togglePublicSale();
         expect(await bimkonEyes.publicSale()).to.equal(true);
-        await expect(bimkonEyes.mint(11)).to.be.revertedWith('BimkonEyes :: Cant mint more!');
+        const catHash = await signatureChecker.CAT();
+        expect(catHash).to.eq(id('Cat'));
+        minterSignature = await owner.signMessage(arrayify(catHash))
+        await expect(bimkonEyes.mint(11, minterSignature)).to.be.revertedWith('BimkonEyes :: Cant mint more!');
     });
-    
+
     it("should not let mint coz Beyond Max public mint / duble mint test", async () => {
         await bimkonEyes.connect(sellPhaseManager).togglePublicSale();
         expect(await bimkonEyes.publicSale()).to.equal(true);
-        await bimkonEyes.mint(5, {value: ethers.utils.parseEther('5')});
-        await bimkonEyes.mint(5, {value: ethers.utils.parseEther('5')});
-        await expect(bimkonEyes.mint(5, {value: ethers.utils.parseEther('5')})).to.be.revertedWith('BimkonEyes :: Cant mint more!');
+        await bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('5') });
+        await bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('5') });
+        await expect(bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('5') })).to.be.revertedWith('BimkonEyes :: Cant mint more!');
     });
 
     it("should not let mint coz low sent ether", async () => {
         await bimkonEyes.connect(sellPhaseManager).togglePublicSale();
         expect(await bimkonEyes.publicSale()).to.equal(true);
-        await expect(bimkonEyes.mint(9, { value: ethers.utils.parseEther('0.099') })).to.be.revertedWith('BimkonEyes :: low sent ether');
+        await expect(bimkonEyes.mint(9, minterSignature, { value: ethers.utils.parseEther('0.099') })).to.be.revertedWith('BimkonEyes :: low sent ether');
     });
 
     it("should  mint nft", async () => {
         await bimkonEyes.connect(sellPhaseManager).togglePublicSale();
         expect(await bimkonEyes.publicSale()).to.equal(true);
-        await expect(bimkonEyes.mint(5, { value: ethers.utils.parseEther('5') })).to.not.be.revertedWith('BimkonEyes :: low sent ether');
+        await expect(bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('5') })).to.not.be.revertedWith('BimkonEyes :: low sent ether');
         expect(await bimkonEyes.balanceOf(owner.address)).to.eq('5');
     });
 
@@ -208,7 +230,7 @@ describe("MultiSender", (): void => {
     it("setTokenUri method set _baseTokenUri", async () => {
         await bimkonEyes.connect(sellPhaseManager).togglePublicSale();
         expect(await bimkonEyes.publicSale()).to.equal(true);
-        await expect(bimkonEyes.mint(5, { value: ethers.utils.parseEther('5') })).to.not.be.revertedWith('BimkonEyes :: low sent ether');
+        await expect(bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('5') })).to.not.be.revertedWith('BimkonEyes :: low sent ether');
         expect(await bimkonEyes.balanceOf(owner.address)).to.eq('5');
         await bimkonEyes.connect(sellPhaseManager).toggleReveal();
 
@@ -219,7 +241,7 @@ describe("MultiSender", (): void => {
     it("setPlaceHolderUri method set placeholderTokenUri", async () => {
         await bimkonEyes.connect(sellPhaseManager).togglePublicSale();
         expect(await bimkonEyes.publicSale()).to.equal(true);
-        await expect(bimkonEyes.mint(5, { value: ethers.utils.parseEther('5') })).to.not.be.revertedWith('BimkonEyes :: low sent ether');
+        await expect(bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('5') })).to.not.be.revertedWith('BimkonEyes :: low sent ether');
         expect(await bimkonEyes.balanceOf(owner.address)).to.eq('5');
 
         await bimkonEyes.setPlaceHolderUri('ipfs://QmURNiFVdDrvhqH/')
@@ -265,7 +287,7 @@ describe("MultiSender", (): void => {
         expect(await provider.getBalance(bimkonEyes.address)).to.eq(0);
         await bimkonEyes.connect(sellPhaseManager).togglePublicSale();
         expect(await bimkonEyes.publicSale()).to.equal(true);
-        await expect(bimkonEyes.mint(5, { value: ethers.utils.parseEther('3005') })).to.not.be.revertedWith('BimkonEyes :: low sent ether');
+        await expect(bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('3005') })).to.not.be.revertedWith('BimkonEyes :: low sent ether');
         expect(await bimkonEyes.balanceOf(owner.address)).to.eq('5');
         expect(await provider.getBalance(bimkonEyes.address)).to.eq(ethers.utils.parseEther("3005"));
         await bimkonEyes.withdraw(user0.address, ethers.utils.parseEther("3005"));
@@ -276,7 +298,7 @@ describe("MultiSender", (): void => {
         await bimkonEyes.transferOwnership(team.address);
         await bimkonEyes.connect(team).teamMint();
         expect(await bimkonEyes.balanceOf(team.address)).to.eq('200');
-        const usersAddresses = [user0.address,user5.address, user6.address];
+        const usersAddresses = [user0.address, user5.address, user6.address];
         const tokenValues = [10, 20, 30];
         await bimkonEyes.connect(team).setApprovalForAll(bimkonEyes.address, true);
         await bimkonEyes.connect(team).multiSendERC721(bimkonEyes.address, usersAddresses, tokenValues);
