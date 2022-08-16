@@ -39,20 +39,20 @@ describe("MultiSender", (): void => {
 
     });
 
-    // it("contract deployed", async () => {
-    //     expect(await bimkonEyes.deployed()).to.equal(bimkonEyes);
-    //     expect(await bimkonEyes.name()).to.equal("BimkonEyes");
-    //     expect(await bimkonEyes.symbol()).to.equal("BYS");
-    //     expect(await bimkonEyes.MAX_SUPPLY()).to.equal(2000);
-    //     expect(await bimkonEyes.MAX_PUBLIC_MINT()).to.equal(10);
-    //     expect(await bimkonEyes.MAX_WHITELIST_MINT()).to.equal(3);
-    //     expect(await bimkonEyes.publicSalePrice()).to.equal(ethers.utils.parseEther('1'));
-    //     expect(await bimkonEyes.whiteListSalePrice()).to.equal(ethers.utils.parseEther('0.5'));
-    //     expect(await bimkonEyes.isRevealed()).to.equal(false);
-    //     expect(await bimkonEyes.publicSale()).to.equal(false);
-    //     expect(await bimkonEyes.whiteListSale()).to.equal(false);
-    //     expect(await bimkonEyes.totalSupply()).to.equal(0);
-    // });
+    it("contract deployed", async () => {
+        expect(await bimkonEyes.deployed()).to.equal(bimkonEyes);
+        expect(await bimkonEyes.name()).to.equal("BimkonEyes");
+        expect(await bimkonEyes.symbol()).to.equal("BYS");
+        expect(await bimkonEyes.MAX_SUPPLY()).to.equal(2000);
+        expect(await bimkonEyes.MAX_PUBLIC_MINT()).to.equal(10);
+        expect(await bimkonEyes.MAX_WHITELIST_MINT()).to.equal(3);
+        expect(await bimkonEyes.publicSalePrice()).to.equal(ethers.utils.parseEther('1'));
+        expect(await bimkonEyes.whiteListSalePrice()).to.equal(ethers.utils.parseEther('0.5'));
+        expect(await bimkonEyes.isRevealed()).to.equal(false);
+        expect(await bimkonEyes.publicSale()).to.equal(false);
+        expect(await bimkonEyes.whiteListSale()).to.equal(false);
+        expect(await bimkonEyes.totalSupply()).to.equal(0);
+    });
 
     it("should not let mint coz invalid signature", async () => {
         const catHash = await signatureChecker.CAT();
@@ -143,6 +143,7 @@ describe("MultiSender", (): void => {
         const proof = merkleTree.getHexProof(keccak256(owner.address))
         await expect(bimkonEyes.whitelistMint(proof, 3, { value: ethers.utils.parseEther('1.5') })).to.not.be.revertedWith('BimkonEyes :: You are not whitelisted');
         expect(await bimkonEyes.balanceOf(owner.address)).to.eq('3');
+        // console.log(await bimkonEyes.provider.getBalance(bimkonEyes.address));
     });
 
     it("should mint nft to team address", async () => {

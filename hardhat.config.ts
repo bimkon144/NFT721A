@@ -31,6 +31,10 @@ const config: HardhatUserConfig = {
       mining: {
         auto: true,
         // interval: 1000
+      },
+      forking: {
+        url: "https://eth-goerli.g.alchemy.com/v2/Kx81tSIBMp3e-odF2je1s2x0yQK8yA8Z",
+        blockNumber: 7350643
       }
     },
     testnet: {
