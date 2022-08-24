@@ -216,20 +216,20 @@ contract BimkonEyes is ERC721A, Ownable, AccessControl {
 
   ///@notice check mint amount for airdrop left
   ///@return uint256 amount for airdrop left
-  function allowedToClaimDropAmount() external view returns (uint256) {
-    return MAX_AIRDROP_MINT - totalAirdropMint[msg.sender];
+  function allowedToClaimDropAmount(address _account) external view returns (uint256) {
+    return MAX_AIRDROP_MINT - totalAirdropMint[_account];
   }
 
   ///@notice check mint amount for whiteList left
   ///@return uint256 amount for whiteList left
-  function allowedToWhiteListMintAmount() external view returns (uint256) {
-    return MAX_WHITELIST_MINT - totalWhitelistMint[msg.sender];
+  function allowedToWhiteListMintAmount(address _account) external view returns (uint256) {
+    return MAX_WHITELIST_MINT - totalWhitelistMint[_account];
   }
 
   ///@notice check mint amount for publicSale left
   ///@return uint256 amount for publicSake left
-  function allowedToPublicMintAmount() external view returns (uint256) {
-    return MAX_PUBLIC_MINT - totalPublicMint[msg.sender];
+  function allowedToPublicMintAmount(address _account) external view returns (uint256) {
+    return MAX_PUBLIC_MINT - totalPublicMint[_account];
   }
 
   ///@notice team mint nft for themselfs
