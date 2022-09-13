@@ -127,22 +127,22 @@ This is a sample of NFT-721A project to deploy to testnet.
 4. create .env in root derictory with keys like in .env.example
 
 
-5. go to [alchemy](https://auth.alchemyapi.io/?redirectUrl=https%3A%2F%2Fdashboard.alchemyapi.io%2Fsignup%2F) create goerli network app and get api key.
+5. go to [alchemy](https://auth.alchemyapi.io/?redirectUrl=https%3A%2F%2Fdashboard.alchemyapi.io%2Fsignup%2F) create goerli network app and get api url.
   Enter the key in .env
      ```js
-   GOERLI_RPC_URL="ENTER_YOUR_KEY";
+   GOERLI_RPC_URL="https://eth-goerli.g.alchemy.com/v2/examplerelF0alwxmwZpF333_86fCF_JgfA_Ai_";
    ```
 6. [get](https://metamask.zendesk.com/hc/en-us/articles/360015289632-How-to-export-an-account-s-private-key) your wallet private key from metamask.
   Enter the key in .env
      ```js
    WALLET_KEY="ENTER_YOUR_PRIVATE_KEY";
    ```
-6. [get](https://metamask.zendesk.com/hc/en-us/articles/360015289632-How-to-export-an-account-s-private-key) your wallet private key from metamask.
+7. [get](https://etherscan.io/myapikey) your API key from ETHERSCAN.
   Enter the key in .env
      ```js
-   WALLET_KEY="ENTER_YOUR_PRIVATE_KEY";
+   ETHERSCAN_API_KEY="ENTER_YOUR_API_KEY";
    ```
- 8. run deploy script  - `npx hardhat run tasks/deploy.ts --network goerli`
+ 8. run deploy script  - `npx hardhat run tasks/deploy.js --network goerli`
  
  9. Congratulations! Now you got your deployed and verified contract. You can check it on etherscan.
 
