@@ -49,8 +49,8 @@ describe("MultiSender", (): void => {
         expect(await bimkonEyes.publicSalePrice()).to.equal(ethers.utils.parseEther('1'));
         expect(await bimkonEyes.whiteListSalePrice()).to.equal(ethers.utils.parseEther('0.5'));
         expect(await bimkonEyes.isRevealed()).to.equal(false);
-        expect(await bimkonEyes.publicSale()).to.equal(false);
-        expect(await bimkonEyes.whiteListSale()).to.equal(false);
+        expect(await bimkonEyes.publicSale()).to.equal(0);
+        expect(await bimkonEyes.whiteListSale()).to.equal(0);
         expect(await bimkonEyes.totalSupply()).to.equal(0);
     });
 
@@ -58,90 +58,90 @@ describe("MultiSender", (): void => {
         const catHash = await signatureChecker.CAT();
         expect(catHash).to.eq(id('Cat'));
         minterSignature = await owner.signMessage(arrayify(catHash))
-        await bimkonEyes.connect(sellPhaseManager).togglePublicSale();
-        await expect(bimkonEyes.mint(11, minterSignature)).to.not.be.revertedWith("BimkonEyes :: Invalid Signature.");
+        await bimkonEyes.connect(sellPhaseManager).togglePublicSale(1);
+        await expect(bimkonEyes.mint(11, minterSignature)).to.not.be.revertedWith('InvalidSignature()');
 
         const friendSignature = await user0.signMessage(arrayify(catHash))
-        await expect(bimkonEyes.mint(1, friendSignature, { value: ethers.utils.parseEther('5') })).to.be.revertedWith("BimkonEyes :: Invalid Signature.");
+        await expect(bimkonEyes.mint(1, friendSignature, { value: ethers.utils.parseEther('5') })).to.be.revertedWith('InvalidSignature()');
     });
 
-    it("should not let mint coz publicSale=false", async () => {
-        await expect(bimkonEyes.mint(1, minterSignature)).to.be.revertedWith('BimkonEyes :: Not Yet Active.');
+    it("should not let mint coz publicSale!=Available", async () => {
+        await expect(bimkonEyes.mint(1, minterSignature)).to.be.revertedWith('PublicSaleNotAvailable()');
     });
 
     it("should not let mint coz Beyond Max Supply", async () => {
-        await bimkonEyes.connect(sellPhaseManager).togglePublicSale();
-        expect(await bimkonEyes.publicSale()).to.equal(true);
-        await expect(bimkonEyes.connect(team).mint(2001, minterSignature)).to.be.revertedWith('BimkonEyes :: Beyond Max Supply');
+        await bimkonEyes.connect(sellPhaseManager).togglePublicSale(1);
+        expect(await bimkonEyes.publicSale()).to.equal(1);
+        await expect(bimkonEyes.connect(team).mint(2001, minterSignature)).to.be.revertedWith('BeyondMaxSupply()');
     });
 
     it("should not let mint coz Beyond Max public mint", async () => {
-        await bimkonEyes.connect(sellPhaseManager).togglePublicSale();
-        expect(await bimkonEyes.publicSale()).to.equal(true);
+        await bimkonEyes.connect(sellPhaseManager).togglePublicSale(1);
+        expect(await bimkonEyes.publicSale()).to.equal(1);
         const catHash = await signatureChecker.CAT();
         expect(catHash).to.eq(id('Cat'));
         minterSignature = await owner.signMessage(arrayify(catHash))
-        await expect(bimkonEyes.mint(11, minterSignature)).to.be.revertedWith('BimkonEyes :: Cant mint more!');
+        await expect(bimkonEyes.mint(11, minterSignature)).to.be.revertedWith('CantMintMore()');
     });
 
     it("should not let mint coz Beyond Max public mint / duble mint test", async () => {
-        await bimkonEyes.connect(sellPhaseManager).togglePublicSale();
-        expect(await bimkonEyes.publicSale()).to.equal(true);
+        await bimkonEyes.connect(sellPhaseManager).togglePublicSale(1);
+        expect(await bimkonEyes.publicSale()).to.equal(1);
         await bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('5') });
         await bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('5') });
-        await expect(bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('5') })).to.be.revertedWith('BimkonEyes :: Cant mint more!');
+        await expect(bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('5') })).to.be.revertedWith('CantMintMore()');
     });
 
     it("should not let mint coz low sent ether", async () => {
-        await bimkonEyes.connect(sellPhaseManager).togglePublicSale();
-        expect(await bimkonEyes.publicSale()).to.equal(true);
-        await expect(bimkonEyes.mint(9, minterSignature, { value: ethers.utils.parseEther('0.099') })).to.be.revertedWith('BimkonEyes :: low sent ether');
+        await bimkonEyes.connect(sellPhaseManager).togglePublicSale(1);
+        expect(await bimkonEyes.publicSale()).to.equal(1);
+        await expect(bimkonEyes.mint(9, minterSignature, { value: ethers.utils.parseEther('0.099') })).to.be.revertedWith('LowSentEther()');
     });
 
     it("should  mint nft", async () => {
-        await bimkonEyes.connect(sellPhaseManager).togglePublicSale();
-        expect(await bimkonEyes.publicSale()).to.equal(true);
-        await expect(bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('5') })).to.not.be.revertedWith('BimkonEyes :: low sent ether');
+        await bimkonEyes.connect(sellPhaseManager).togglePublicSale(1);
+        expect(await bimkonEyes.publicSale()).to.equal(1);
+        await expect(bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('5') })).to.not.be.revertedWith('LowSentEther()');
         expect(await bimkonEyes.balanceOf(owner.address)).to.eq('5');
     });
 
     it("should not let mint while whiteListSale = false ", async () => {
         const proof = merkleTree.getHexProof(keccak256(owner.address))
-        await expect(bimkonEyes.connect(whiteListManager).whitelistMint(proof, 5)).to.be.revertedWith('BimkonEyes :: Minting is on Pause');
+        await expect(bimkonEyes.connect(whiteListManager).whitelistMint(proof, 5)).to.be.revertedWith('WhiteListSaleNotAvailable()');
     });
 
     it("should not let mint while max beyond  supply ", async () => {
-        await bimkonEyes.connect(sellPhaseManager).toggleWhiteListSale();
+        await bimkonEyes.connect(sellPhaseManager).toggleWhiteListSale(1);
         const badProof = merkleTree.getHexProof(keccak256(user0.address))
-        await expect(bimkonEyes.whitelistMint(badProof, 2001)).to.be.revertedWith("BimkonEyes :: Beyond Max Supply");
+        await expect(bimkonEyes.whitelistMint(badProof, 2001)).to.be.revertedWith('BeyondMaxSupply()');
     });
 
     it("should not let mint while beyond max whitelist mint", async () => {
-        await bimkonEyes.connect(sellPhaseManager).toggleWhiteListSale();
+        await bimkonEyes.connect(sellPhaseManager).toggleWhiteListSale(1);
         await bimkonEyes.connect(whiteListManager).setMerkleRootWhiteList(root);
         const badProof = merkleTree.getHexProof(keccak256(user0.address))
-        await expect(bimkonEyes.whitelistMint(badProof, 4)).to.be.revertedWith('BimkonEyes :: Cannot mint beyond whitelist max mint!');
+        await expect(bimkonEyes.whitelistMint(badProof, 4)).to.be.revertedWith('CantMintMore()');
     });
 
     it("should not let mint while payment is below the price", async () => {
-        await bimkonEyes.connect(sellPhaseManager).toggleWhiteListSale();
+        await bimkonEyes.connect(sellPhaseManager).toggleWhiteListSale(1);
         await bimkonEyes.connect(whiteListManager).setMerkleRootWhiteList(root);
         const badProof = merkleTree.getHexProof(keccak256(user0.address))
-        await expect(bimkonEyes.whitelistMint(badProof, 3, { value: ethers.utils.parseEther('0.5') })).to.be.revertedWith('BimkonEyes :: Payment is below the price');
+        await expect(bimkonEyes.whitelistMint(badProof, 3, { value: ethers.utils.parseEther('0.5') })).to.be.revertedWith('LowSentEther()');
     });
 
     it("should not let mint while coz badProof - no in white list", async () => {
-        await bimkonEyes.connect(sellPhaseManager).toggleWhiteListSale();
+        await bimkonEyes.connect(sellPhaseManager).toggleWhiteListSale(1);
         await bimkonEyes.connect(whiteListManager).setMerkleRootWhiteList(root);
         const badProof = merkleTree.getHexProof(keccak256(user0.address))
-        await expect(bimkonEyes.whitelistMint(badProof, 3, { value: ethers.utils.parseEther('1.5') })).to.be.revertedWith('BimkonEyes :: You are not whitelisted');
+        await expect(bimkonEyes.whitelistMint(badProof, 3, { value: ethers.utils.parseEther('1.5') })).to.be.revertedWith('YouAreNotWhiteList()');
     });
 
     it("should mint nft to whitelisted addresses", async () => {
-        await bimkonEyes.connect(sellPhaseManager).toggleWhiteListSale();
+        await bimkonEyes.connect(sellPhaseManager).toggleWhiteListSale(1);
         await bimkonEyes.connect(whiteListManager).setMerkleRootWhiteList(root);
         const proof = merkleTree.getHexProof(keccak256(owner.address))
-        await expect(bimkonEyes.whitelistMint(proof, 3, { value: ethers.utils.parseEther('1.5') })).to.not.be.revertedWith('BimkonEyes :: You are not whitelisted');
+        await expect(bimkonEyes.whitelistMint(proof, 3, { value: ethers.utils.parseEther('1.5') })).to.not.be.revertedWith('YouAreNotWhiteList()');
         expect(await bimkonEyes.balanceOf(owner.address)).to.eq('3');
         // console.log(await bimkonEyes.provider.getBalance(bimkonEyes.address));
     });
@@ -153,7 +153,7 @@ describe("MultiSender", (): void => {
     });
 
     it("claimAirdrop should let claim AirDrop", async () => {
-        await bimkonEyes.connect(sellPhaseManager).toggleAirDrop();
+        await bimkonEyes.connect(sellPhaseManager).toggleAirDrop(1);
         await bimkonEyes.connect(whiteListManager).setMerkleRootAirDrop(root);
         const proof = merkleTree.getHexProof(keccak256(owner.address))
         expect(await bimkonEyes.canClaimAirDrop(proof)).to.eq(true);
@@ -162,30 +162,30 @@ describe("MultiSender", (): void => {
     });
 
     it("claimAirdrop should not let claim AirDrop coz of beyond max airdrop quantity", async () => {
-        await bimkonEyes.connect(sellPhaseManager).toggleAirDrop();
+        await bimkonEyes.connect(sellPhaseManager).toggleAirDrop(1);
         await bimkonEyes.connect(whiteListManager).setMerkleRootAirDrop(root);
         const proof = merkleTree.getHexProof(keccak256(owner.address))
         expect(await bimkonEyes.canClaimAirDrop(proof)).to.eq(true);
-        await expect(bimkonEyes.claimAirdrop(proof, 3)).to.be.revertedWith('BimkonEyes :: Cannot mint beyond airdrop max mint!');
+        await expect(bimkonEyes.claimAirdrop(proof, 3)).to.be.revertedWith('CantMintMore()');
     });
 
     it("tokenURI method should return placeholderTokenUri when isRevealed=false", async () => {
-        await bimkonEyes.connect(sellPhaseManager).toggleWhiteListSale();
+        await bimkonEyes.connect(sellPhaseManager).toggleWhiteListSale(1);
         await bimkonEyes.connect(whiteListManager).setMerkleRootWhiteList(root);
         const proof = merkleTree.getHexProof(keccak256(owner.address))
-        await expect(bimkonEyes.whitelistMint(proof, 3, { value: ethers.utils.parseEther('1.5') })).to.not.be.revertedWith('BimkonEyes :: You are not whitelisted');
+        await expect(bimkonEyes.whitelistMint(proof, 3, { value: ethers.utils.parseEther('1.5') })).to.not.be.revertedWith('YouAreNotWhiteList()');
         expect(await bimkonEyes.balanceOf(owner.address)).to.eq('3');
         await bimkonEyes.setTokenUri('ipfs://QmURNiFVdDrvhqHtDfoFdfGfNxgFsjQCnGbvaUGpqP8qJV/')
         await bimkonEyes.setPlaceHolderUri('ipfs://setPlaceHolderUri');
         expect(await bimkonEyes.isRevealed()).to.eq(false);
-        expect(await bimkonEyes.tokenURI(0)).to.eq('ipfs://setPlaceHolderUri');
         expect(await bimkonEyes.tokenURI(1)).to.eq('ipfs://setPlaceHolderUri');
         expect(await bimkonEyes.tokenURI(2)).to.eq('ipfs://setPlaceHolderUri');
+        expect(await bimkonEyes.tokenURI(3)).to.eq('ipfs://setPlaceHolderUri');
         expect(await bimkonEyes.balanceOf(owner.address)).to.eq('3');
     });
 
     it("tokenURI method should return baseURI when isRevealed=true", async () => {
-        await bimkonEyes.connect(sellPhaseManager).toggleWhiteListSale();
+        await bimkonEyes.connect(sellPhaseManager).toggleWhiteListSale(1);
         await bimkonEyes.connect(whiteListManager).setMerkleRootWhiteList(root);
         const proof = merkleTree.getHexProof(keccak256(owner.address))
         await expect(bimkonEyes.whitelistMint(proof, 3, { value: ethers.utils.parseEther('1.5') })).to.not.be.revertedWith('BimkonEyes :: You are not whitelisted');
@@ -194,14 +194,14 @@ describe("MultiSender", (): void => {
         await bimkonEyes.setPlaceHolderUri('ipfs://setPlaceHolderUri');
         await bimkonEyes.connect(sellPhaseManager).toggleReveal();
         expect(await bimkonEyes.isRevealed()).to.eq(true);
-        expect(await bimkonEyes.tokenURI(0)).to.eq('ipfs://QmURNiFVdDrvhqHtDfoFdfGfNxgFsjQCnGbvaUGpqP8qJV/1.json');
-        expect(await bimkonEyes.tokenURI(1)).to.eq('ipfs://QmURNiFVdDrvhqHtDfoFdfGfNxgFsjQCnGbvaUGpqP8qJV/2.json');
-        expect(await bimkonEyes.tokenURI(2)).to.eq('ipfs://QmURNiFVdDrvhqHtDfoFdfGfNxgFsjQCnGbvaUGpqP8qJV/3.json');
+        expect(await bimkonEyes.tokenURI(1)).to.eq('ipfs://QmURNiFVdDrvhqHtDfoFdfGfNxgFsjQCnGbvaUGpqP8qJV/1.json');
+        expect(await bimkonEyes.tokenURI(2)).to.eq('ipfs://QmURNiFVdDrvhqHtDfoFdfGfNxgFsjQCnGbvaUGpqP8qJV/2.json');
+        expect(await bimkonEyes.tokenURI(3)).to.eq('ipfs://QmURNiFVdDrvhqHtDfoFdfGfNxgFsjQCnGbvaUGpqP8qJV/3.json');
         expect(await bimkonEyes.balanceOf(owner.address)).to.eq('3');
     });
 
     it("tokenURI method should return baseURI when isRevealed=true", async () => {
-        await bimkonEyes.connect(sellPhaseManager).toggleWhiteListSale();
+        await bimkonEyes.connect(sellPhaseManager).toggleWhiteListSale(1);
         await bimkonEyes.connect(whiteListManager).setMerkleRootWhiteList(root);
         const proof = merkleTree.getHexProof(keccak256(owner.address))
         await expect(bimkonEyes.whitelistMint(proof, 3, { value: ethers.utils.parseEther('1.5') })).to.not.be.revertedWith('BimkonEyes :: You are not whitelisted');
@@ -210,9 +210,9 @@ describe("MultiSender", (): void => {
         await bimkonEyes.setPlaceHolderUri('ipfs://setPlaceHolderUri');
         await bimkonEyes.connect(sellPhaseManager).toggleReveal();
         expect(await bimkonEyes.isRevealed()).to.eq(true);
-        expect(await bimkonEyes.tokenURI(0)).to.eq('ipfs://QmURNiFVdDrvhqHtDfoFdfGfNxgFsjQCnGbvaUGpqP8qJV/1.json');
-        expect(await bimkonEyes.tokenURI(1)).to.eq('ipfs://QmURNiFVdDrvhqHtDfoFdfGfNxgFsjQCnGbvaUGpqP8qJV/2.json');
-        expect(await bimkonEyes.tokenURI(2)).to.eq('ipfs://QmURNiFVdDrvhqHtDfoFdfGfNxgFsjQCnGbvaUGpqP8qJV/3.json');
+        expect(await bimkonEyes.tokenURI(1)).to.eq('ipfs://QmURNiFVdDrvhqHtDfoFdfGfNxgFsjQCnGbvaUGpqP8qJV/1.json');
+        expect(await bimkonEyes.tokenURI(2)).to.eq('ipfs://QmURNiFVdDrvhqHtDfoFdfGfNxgFsjQCnGbvaUGpqP8qJV/2.json');
+        expect(await bimkonEyes.tokenURI(3)).to.eq('ipfs://QmURNiFVdDrvhqHtDfoFdfGfNxgFsjQCnGbvaUGpqP8qJV/3.json');
         expect(await bimkonEyes.balanceOf(owner.address)).to.eq('3');
     });
 
@@ -229,20 +229,20 @@ describe("MultiSender", (): void => {
     });
 
     it("setTokenUri method set _baseTokenUri", async () => {
-        await bimkonEyes.connect(sellPhaseManager).togglePublicSale();
-        expect(await bimkonEyes.publicSale()).to.equal(true);
-        await expect(bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('5') })).to.not.be.revertedWith('BimkonEyes :: low sent ether');
+        await bimkonEyes.connect(sellPhaseManager).togglePublicSale(1);
+        expect(await bimkonEyes.publicSale()).to.equal(1);
+        await expect(bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('5') })).to.not.be.revertedWith('LowSentEther()');
         expect(await bimkonEyes.balanceOf(owner.address)).to.eq('5');
         await bimkonEyes.connect(sellPhaseManager).toggleReveal();
 
         await bimkonEyes.setTokenUri('ipfs://QmURNiFVdDrvhqHtDfoFdfGfNxgFsjQCnGbvaUGpqP8qJV/')
-        expect(await bimkonEyes.tokenURI(0)).to.eq('ipfs://QmURNiFVdDrvhqHtDfoFdfGfNxgFsjQCnGbvaUGpqP8qJV/1.json');
+        expect(await bimkonEyes.tokenURI(1)).to.eq('ipfs://QmURNiFVdDrvhqHtDfoFdfGfNxgFsjQCnGbvaUGpqP8qJV/1.json');
     });
 
     it("setPlaceHolderUri method set placeholderTokenUri", async () => {
-        await bimkonEyes.connect(sellPhaseManager).togglePublicSale();
-        expect(await bimkonEyes.publicSale()).to.equal(true);
-        await expect(bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('5') })).to.not.be.revertedWith('BimkonEyes :: low sent ether');
+        await bimkonEyes.connect(sellPhaseManager).togglePublicSale(1);
+        expect(await bimkonEyes.publicSale()).to.equal(1);
+        await expect(bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('5') })).to.not.be.revertedWith('LowSentEther()');
         expect(await bimkonEyes.balanceOf(owner.address)).to.eq('5');
 
         await bimkonEyes.setPlaceHolderUri('ipfs://QmURNiFVdDrvhqH/')
@@ -260,15 +260,15 @@ describe("MultiSender", (): void => {
     });
 
     it("toggleWhiteListSale method toggle whiteListSale", async () => {
-        expect(await bimkonEyes.whiteListSale()).to.equal(false);
-        await bimkonEyes.connect(sellPhaseManager).toggleWhiteListSale();
-        expect(await bimkonEyes.whiteListSale()).to.equal(true);
+        expect(await bimkonEyes.whiteListSale()).to.equal(0);
+        await bimkonEyes.connect(sellPhaseManager).toggleWhiteListSale(1);
+        expect(await bimkonEyes.whiteListSale()).to.equal(1);
     });
 
     it("togglePublicSale method toggle publicSale", async () => {
-        expect(await bimkonEyes.publicSale()).to.equal(false);
-        await bimkonEyes.connect(sellPhaseManager).togglePublicSale();
-        expect(await bimkonEyes.publicSale()).to.equal(true);
+        expect(await bimkonEyes.publicSale()).to.equal(0);
+        await bimkonEyes.connect(sellPhaseManager).togglePublicSale(1);
+        expect(await bimkonEyes.publicSale()).to.equal(1);
     });
 
     it("toggleReveal method toggle reveal", async () => {
@@ -278,17 +278,17 @@ describe("MultiSender", (): void => {
     });
 
     it("toggleAirDrop method toggle AirDrop", async () => {
-        expect(await bimkonEyes.airDrop()).to.equal(false);
-        await bimkonEyes.connect(sellPhaseManager).toggleAirDrop();
-        expect(await bimkonEyes.airDrop()).to.equal(true);
+        expect(await bimkonEyes.airDrop()).to.equal(0);
+        await bimkonEyes.connect(sellPhaseManager).toggleAirDrop(1);
+        expect(await bimkonEyes.airDrop()).to.equal(1);
     });
 
     it("should withdraw ether from contract to owner", async () => {
         const provider = waffle.provider;
         expect(await provider.getBalance(bimkonEyes.address)).to.eq(0);
-        await bimkonEyes.connect(sellPhaseManager).togglePublicSale();
-        expect(await bimkonEyes.publicSale()).to.equal(true);
-        await expect(bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('3005') })).to.not.be.revertedWith('BimkonEyes :: low sent ether');
+        await bimkonEyes.connect(sellPhaseManager).togglePublicSale(1);
+        expect(await bimkonEyes.publicSale()).to.equal(1);
+        await expect(bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('3005') })).to.not.be.revertedWith('LowSentEther()');
         expect(await bimkonEyes.balanceOf(owner.address)).to.eq('5');
         expect(await provider.getBalance(bimkonEyes.address)).to.eq(ethers.utils.parseEther("3005"));
         await bimkonEyes.withdraw(user0.address, ethers.utils.parseEther("3005"));

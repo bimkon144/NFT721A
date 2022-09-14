@@ -1,5 +1,5 @@
 const contractAddresses = {
-  walletAddress: '0xa886280c779c772f2663C4b53C1601C481682259',
+  walletAddress: '0x62b35Eb73edcb96227F666A878201b2cF915c2B5',
 
 };
 
