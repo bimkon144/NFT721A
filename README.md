@@ -146,7 +146,11 @@ This is a sample of NFT-721A project to deploy to testnet.
  
  9. Congratulations! Now you got your deployed and verified contract. You can check it on etherscan.
 
-
+ update: publicSale, whiteListSale, airDrop now got states: 0 - "Soon", 1 - "Available", 2 - "Finished".
+ 
+ Default state of those are 'Soon'.
+ 
+ You have to pass argument of state(0-1) to functions like toggleWhiteListSale(1);
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- CONTRIBUTING -->
