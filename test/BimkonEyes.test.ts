@@ -156,7 +156,7 @@ describe("MultiSender", (): void => {
         await bimkonEyes.connect(sellPhaseManager).toggleAirDrop(1);
         await bimkonEyes.connect(whiteListManager).setMerkleRootAirDrop(root);
         const proof = merkleTree.getHexProof(keccak256(owner.address))
-        expect(await bimkonEyes.canClaimAirDrop(proof)).to.eq(true);
+        expect(await bimkonEyes.canClaimAirDrop(proof, owner.address)).to.eq(true);
         await bimkonEyes.claimAirdrop(proof, 2)
         expect(await bimkonEyes.balanceOf(owner.address)).to.eq('2');
     });
@@ -165,7 +165,7 @@ describe("MultiSender", (): void => {
         await bimkonEyes.connect(sellPhaseManager).toggleAirDrop(1);
         await bimkonEyes.connect(whiteListManager).setMerkleRootAirDrop(root);
         const proof = merkleTree.getHexProof(keccak256(owner.address))
-        expect(await bimkonEyes.canClaimAirDrop(proof)).to.eq(true);
+        expect(await bimkonEyes.canClaimAirDrop(proof, owner.address)).to.eq(true);
         await expect(bimkonEyes.claimAirdrop(proof, 3)).to.be.revertedWith('CantMintMore()');
     });
 

@@ -14,7 +14,7 @@ async function main() {
   const bimkonEyes = await BimkonEyes.deploy(...args);
   await bimkonEyes.deployed();
   console.log("BimkonEyes deployed to:", bimkonEyes.address);
-  await bimkonEyes.deployTransaction.wait(2)
+  await bimkonEyes.deployTransaction.wait(5)
   await verify(bimkonEyes.address, args)
 
 }

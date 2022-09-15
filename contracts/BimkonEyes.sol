@@ -215,7 +215,7 @@ contract BimkonEyes is ERC721A, Ownable, AccessControl {
   ///@param _merkleProof proof that user in whiteList for airdrop
   ///@dev using merkleProof to verify user
   ///@return bool that indicated if user can claim Airdrop
-  function canClaimAirDrop(bytes32[] memory _merkleProof)
+  function canClaimAirDrop(bytes32[] memory _merkleProof, address _account)
     external
     view
     returns (bool)
@@ -224,7 +224,7 @@ contract BimkonEyes is ERC721A, Ownable, AccessControl {
       MerkleProof.verify(
         _merkleProof,
         _merkleRootAirDrop,
-        keccak256(abi.encodePacked(msg.sender))
+        keccak256(abi.encodePacked(_account))
       );
   }
 
@@ -232,7 +232,7 @@ contract BimkonEyes is ERC721A, Ownable, AccessControl {
   ///@param _merkleProof proof that user in whiteLis for whitelistSale
   ///@dev using merkleProof to verify user
   ///@return bool that indicated if user can claim Airdrop
-  function isWhiteListed(bytes32[] memory _merkleProof)
+  function isWhiteListed(bytes32[] memory _merkleProof, address _account)
     external
     view
     returns (bool)
@@ -241,7 +241,7 @@ contract BimkonEyes is ERC721A, Ownable, AccessControl {
       MerkleProof.verify(
         _merkleProof,
         _merkleRootWhiteList,
-        keccak256(abi.encodePacked(msg.sender))
+        keccak256(abi.encodePacked(_account))
       );
   }
 
