@@ -13,17 +13,13 @@ describe("MultiSender", (): void => {
     let bimkonEyes: BimkonEyes;
     let root: any;
     let merkleTree: any;
-    let signatureChecker: any;
     let minterSignature: any;
 
 
     beforeEach(async () => {
         [owner, user0, team, priceManager, sellPhaseManager, whiteListManager, user5, user6, user7, user8, user9] = await ethers.getSigners();
-        const SignatureChecker = await ethers.getContractFactory("SignatureChecker");
-        signatureChecker = await SignatureChecker.deploy();
-        await signatureChecker.deployed();
         const BimkonEyes = await ethers.getContractFactory("BimkonEyes");
-        bimkonEyes = await BimkonEyes.deploy(priceManager.address, sellPhaseManager.address, whiteListManager.address, signatureChecker.address);
+        bimkonEyes = await BimkonEyes.deploy(priceManager.address, sellPhaseManager.address, whiteListManager.address);
         await bimkonEyes.deployed();
         const randomAddresses = new Array(15)
             .fill(0)
@@ -55,7 +51,7 @@ describe("MultiSender", (): void => {
     });
 
     it("should not let mint coz invalid signature", async () => {
-        const catHash = await signatureChecker.CAT();
+        const catHash = await bimkonEyes.CAT();
         expect(catHash).to.eq(id('Cat'));
         minterSignature = await owner.signMessage(arrayify(catHash))
         await bimkonEyes.connect(sellPhaseManager).togglePublicSale(1);
@@ -78,7 +74,7 @@ describe("MultiSender", (): void => {
     it("should not let mint coz Beyond Max public mint", async () => {
         await bimkonEyes.connect(sellPhaseManager).togglePublicSale(1);
         expect(await bimkonEyes.publicSale()).to.equal(1);
-        const catHash = await signatureChecker.CAT();
+        const catHash = await bimkonEyes.CAT();
         expect(catHash).to.eq(id('Cat'));
         minterSignature = await owner.signMessage(arrayify(catHash))
         await expect(bimkonEyes.mint(11, minterSignature)).to.be.revertedWith('CantMintMore()');
@@ -89,7 +85,7 @@ describe("MultiSender", (): void => {
         expect(await bimkonEyes.publicSale()).to.equal(1);
         await bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('5') });
         await bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('5') });
-        await expect(bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('5') })).to.be.revertedWith('CantMintMore()');
+        await expect(bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('5') })).to.be.revertedWith('CantMintMore');
     });
 
     it("should not let mint coz low sent ether", async () => {
@@ -147,9 +143,8 @@ describe("MultiSender", (): void => {
     });
 
     it("should mint nft to team address", async () => {
-        await bimkonEyes.transferOwnership(team.address);
-        await bimkonEyes.connect(team).teamMint();
-        expect(await bimkonEyes.balanceOf(team.address)).to.eq('200');
+        await bimkonEyes.teamMint();
+        expect(await bimkonEyes.balanceOf(owner.address)).to.eq('200');
     });
 
     it("claimAirdrop should let claim AirDrop", async () => {
@@ -288,25 +283,24 @@ describe("MultiSender", (): void => {
         expect(await provider.getBalance(bimkonEyes.address)).to.eq(0);
         await bimkonEyes.connect(sellPhaseManager).togglePublicSale(1);
         expect(await bimkonEyes.publicSale()).to.equal(1);
-        await expect(bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('3005') })).to.not.be.revertedWith('LowSentEther()');
+        await expect(bimkonEyes.mint(5, minterSignature, { value: ethers.utils.parseEther('5') })).to.not.be.revertedWith('LowSentEther()');
         expect(await bimkonEyes.balanceOf(owner.address)).to.eq('5');
-        expect(await provider.getBalance(bimkonEyes.address)).to.eq(ethers.utils.parseEther("3005"));
-        await bimkonEyes.withdraw(user0.address, ethers.utils.parseEther("3005"));
+        expect(await provider.getBalance(bimkonEyes.address)).to.eq(ethers.utils.parseEther("5"));
+        await bimkonEyes.withdraw(user0.address, ethers.utils.parseEther("5"));
         expect(await provider.getBalance(bimkonEyes.address)).to.eq(0);
     });
 
     it("Multisend should send 721A tokens to addresses ", async () => {
-        await bimkonEyes.transferOwnership(team.address);
-        await bimkonEyes.connect(team).teamMint();
-        expect(await bimkonEyes.balanceOf(team.address)).to.eq('200');
+        await bimkonEyes.teamMint();
+        expect(await bimkonEyes.balanceOf(owner.address)).to.eq('200');
         const usersAddresses = [user0.address, user5.address, user6.address];
         const tokenValues = [10, 20, 30];
-        await bimkonEyes.connect(team).setApprovalForAll(bimkonEyes.address, true);
-        await bimkonEyes.connect(team).multiSendERC721(bimkonEyes.address, usersAddresses, tokenValues);
+        await bimkonEyes.setApprovalForAll(bimkonEyes.address, true);
+        await bimkonEyes.multiSendERC721(bimkonEyes.address, usersAddresses, tokenValues);
         expect(await bimkonEyes.ownerOf(10)).eq(user0.address);
         expect(await bimkonEyes.ownerOf(20)).eq(user5.address);
         expect(await bimkonEyes.ownerOf(30)).eq(user6.address);
-        expect(await bimkonEyes.balanceOf(team.address)).eq(197);
+        expect(await bimkonEyes.balanceOf(owner.address)).eq(197);
 
     });
 

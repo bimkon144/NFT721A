@@ -97,7 +97,7 @@ contract BimkonEyes is ERC721A, AccessControl {
         if (!isValidSignature(_signature, msg.sender)) {
             revert InvalidSignature();
         }
-        if ((totalPublicMint[msg.sender] + _quantity) >= MAX_PUBLIC_MINT) {
+        if ((totalPublicMint[msg.sender] + _quantity) > MAX_PUBLIC_MINT) {
             revert CantMintMore();
         }
         if (!(msg.value == (publicSalePrice * _quantity))) {
@@ -120,7 +120,7 @@ contract BimkonEyes is ERC721A, AccessControl {
         if (whiteListSale != SalePhase.Available) {
             revert WhiteListSaleNotAvailable();
         }
-        if ((totalWhitelistMint[msg.sender] + _quantity) >= MAX_WHITELIST_MINT) {
+        if ((totalWhitelistMint[msg.sender] + _quantity) > MAX_WHITELIST_MINT) {
             revert CantMintMore();
         }
         if (!(msg.value == (whiteListSalePrice * _quantity))) {
@@ -189,7 +189,7 @@ contract BimkonEyes is ERC721A, AccessControl {
         if (airDrop != SalePhase.Available) {
             revert AirDropNotAvailable();
         }
-        if ((totalAirdropMint[msg.sender] + _quantity) >= MAX_AIRDROP_MINT) {
+        if ((totalAirdropMint[msg.sender] + _quantity) > MAX_AIRDROP_MINT) {
             revert CantMintMore();
         }
 
