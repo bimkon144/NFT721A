@@ -14,6 +14,12 @@ dotenv.config();
 
 const config: HardhatUserConfig = {
   solidity: {
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200
+      }
+    },
     compilers: [
       {
         version: '0.8.10',
@@ -50,6 +56,13 @@ const config: HardhatUserConfig = {
     },
     goerli: {
       url: process.env.GOERLI_RPC_URL || '',
+      accounts:
+        process.env.WALLET_KEY !== undefined
+          ? [process.env.WALLET_KEY]
+          : []
+    },
+    mumbai: {
+      url: process.env.MUMBAI_RPC_URL || '',
       accounts:
         process.env.WALLET_KEY !== undefined
           ? [process.env.WALLET_KEY]
