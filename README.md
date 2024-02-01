@@ -106,8 +106,8 @@ This is a sample of NFT-721A project to deploy to testnet.
   ```
 * install [metamask](https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn) extension
 
-* add Goerli testnet to metamask networks
-* claim your test assets from goerli [faucet](https://goerlifaucet.com/)
+* add [Polygon mumbai testnet](https://chainlist.org/chain/80001) to metamask networks
+* claim your test assets from mumbai [faucet](https://mumbaifaucet.com/)
 
 ### Installation
 
@@ -124,25 +124,25 @@ This is a sample of NFT-721A project to deploy to testnet.
    walletAddress: 'ENTER_YOUR_ADDRESS';
    ```
    
-4. create .env in root derictory with keys like in .env.example
+4. create .env in root directory with keys like in .env.example
 
 
-5. go to [alchemy](https://auth.alchemyapi.io/?redirectUrl=https%3A%2F%2Fdashboard.alchemyapi.io%2Fsignup%2F) create goerli network app and get api url.
+5. go to [alchemy](https://auth.alchemyapi.io/?redirectUrl=https%3A%2F%2Fdashboard.alchemyapi.io%2Fsignup%2F) create mumbai network app and get api url.
   Enter the key in .env
      ```js
-   GOERLI_RPC_URL="https://eth-goerli.g.alchemy.com/v2/examplerelF0alwxmwZpF333_86fCF_JgfA_Ai_";
+   MUMBAI_RPC_URL="https://polygon-mumbai.g.alchemy.com/v2/xbeYcyfyuzhLbI-_sxU5NB5rhQk8ypSK";
    ```
 6. [get](https://metamask.zendesk.com/hc/en-us/articles/360015289632-How-to-export-an-account-s-private-key) your wallet private key from metamask.
   Enter the key in .env
      ```js
    WALLET_KEY="ENTER_YOUR_PRIVATE_KEY";
    ```
-7. [get](https://etherscan.io/myapikey) your API key from ETHERSCAN.
+7. [get](https://polygonscan.com/myapikey) your API key from polygon scan.
   Enter the key in .env
      ```js
-   ETHERSCAN_API_KEY="ENTER_YOUR_API_KEY";
+   POLYGONSCAN_API_KEY="ENTER_YOUR_API_KEY";
    ```
- 8. run deploy script  - `npx hardhat run tasks/deploy.js --network goerli`
+ 8. run deploy script  - `npx hardhat run tasks/deploy.js --network mumbai`
  
  9. Congratulations! Now you got your deployed and verified contract. You can check it on etherscan.
 
